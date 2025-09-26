@@ -2,7 +2,7 @@ const {chromium} = require('playwright');
 
 // -------------------- 配置区域 --------------------
 const CN_BING_URL = "https://cn.bing.com";
-const MIN_SEARCH_TIMES = 40; // 最少搜索次数
+const MIN_SEARCH_TIMES = 48; // 最少搜索次数
 const MAX_SEARCH_TIMES = 60; // 最多搜索次数
 const WAIT_TIME = [3, 8];    // 每次搜索后等待的时间范围（秒）
 

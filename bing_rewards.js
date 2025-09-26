@@ -110,6 +110,51 @@ function randomWait([min, max]) {
     return Math.floor(Math.random() * (max - min + 1) + min) * 1000;
 }
 
+async function simulateHumanScroll(page) {
+    try {
+        // 获取页面高度
+        const pageHeight = await page.evaluate(() => document.body.scrollHeight);
+
+        // 随机滚动次数（1-4次）
+        const scrollTimes = Math.floor(Math.random() * 4) + 1;
+        let currentPosition = 0;
+
+        for (let i = 0; i < scrollTimes; i++) {
+            // 随机滚动距离（100-500像素）
+            let scrollDistance = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
+
+            // 30% 概率向上滚动
+            if (Math.random() < 0.3) {
+                scrollDistance = -scrollDistance;
+            }
+
+            const newPosition = currentPosition + scrollDistance;
+            // 用 scrollBy → 相对移动（适合小幅度、人类滚轮式滚动）。
+            // 用 scrollTo → 直接到目标位置（适合顶部 / 底部）。
+            if (newPosition >= 0 && newPosition < pageHeight) {
+                // 滚动相对距离
+                await page.evaluate(y => {
+                    window.scrollBy({ top: y, behavior: "smooth" });
+                }, scrollDistance);
+                currentPosition = newPosition;
+            } else {
+                // 滚动到顶部或底部
+                const target = newPosition < 0 ? 0 : pageHeight;
+                await page.evaluate(y => {
+                    window.scrollTo({ top: y, behavior: "smooth" });
+                }, target);
+                break;
+            }
+
+            // 模拟人类阅读停顿（0.5 - 2秒）
+            const waitMs = Math.random() * (2000 - 500) + 500;
+            await page.waitForTimeout(waitMs);
+        }
+    } catch (e) {
+        console.error("❌ simulateHumanScroll 出错:", e);
+    }
+}
+
 // 检查是否已登录 Bing
 async function isLoggedIn(page) {
     try {
@@ -203,7 +248,7 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
 
             // 等待搜索结果页加载完成
             await page.waitForLoadState("domcontentloaded");
-
+            await simulateHumanScroll(page);
             successCount++;
         } catch (e) {
             console.log(`❌ 搜索失败（第 ${attempt} 次尝试）：${e}`);

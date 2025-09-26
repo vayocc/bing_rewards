@@ -1,0 +1,15 @@
+{
+  "name": "bing_rewards",
+  "version": "1.0.0",
+  "main": "bing_rewards.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "TIM",
+  "description": "",
+  "dependencies": {
+    "playwright": "^1.55.1"
+  }
+}

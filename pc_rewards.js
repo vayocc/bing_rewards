@@ -105,11 +105,12 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// 随机等待（范围秒 → 毫秒）
+// -------------------- 随机等待  范围秒 → 毫秒）--------------------
 function randomWait([min, max]) {
     return Math.floor(Math.random() * (max - min + 1) + min) * 1000;
 }
 
+// -------------------- 模拟人类滚动 --------------------
 async function simulateHumanScroll(page) {
     try {
         // 获取页面高度
@@ -147,15 +148,14 @@ async function simulateHumanScroll(page) {
             }
 
             // 模拟人类阅读停顿（0.5 - 2秒）
-            const waitMs = Math.random() * (2000 - 500) + 500;
-            await page.waitForTimeout(waitMs);
+            await page.waitForTimeout(Math.random() * (2000 - 500) + 500);
         }
     } catch (e) {
         console.error("❌ simulateHumanScroll 出错:", e);
     }
 }
 
-// 检查是否已登录 Bing
+// -------------------- 登录检查 --------------------
 async function isLoggedIn(page) {
     try {
         // 判断“登录”按钮是否可见
@@ -190,8 +190,30 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
     return false;
 }
 
+// -------------------- 启动配置（PC / Mobile 切换） --------------------
+function getLaunchOptions() {
+    if (SEARCH_MODE === "pc") {
+        return {
+            userAgent:
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport: null,
+            isMobile: false,
+            deviceScaleFactor: 1,
+        };
+    } else {
+        return {
+            userAgent:
+                "Mozilla/5.0 (Linux; Android 14; Pixel 6 Build/AP2A.240605.024) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36 Edge/121.0.2277.138",
+            viewport: { width: 360, height: 640 },
+            isMobile: true,
+            deviceScaleFactor: 3,
+        };
+    }
+}
+
 // -------------------- 主逻辑 --------------------
 (async () => {
+    const launchOptions = getLaunchOptions();
     // -------------------- 启动浏览器 + 持久化 --------------------
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
         headless: false,
@@ -206,6 +228,7 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
             "--disable-features=IsolateOrigins,site-per-process",
             "--start-maximized"
         ],
+        ...launchOptions,
         userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         locale: "zh-CN",
         timezoneId: "Asia/Shanghai",

@@ -7,7 +7,7 @@ const MAX_SEARCH_TIMES = 60; // 最多搜索次数
 const WAIT_TIME = [3, 8];    // 每次搜索后等待的时间范围（秒）
 
 // 存储用户数据（免重复登录）
-const USER_DATA_DIR = "/Users/vayo/chrome-profile";
+const USER_DATA_DIR = "/Users/vayo/chrome-profile-pc";
 
 DEFAULT_KEYWORDS = [
     //  技术 & 编程
@@ -190,30 +190,8 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
     return false;
 }
 
-// -------------------- 启动配置（PC / Mobile 切换） --------------------
-function getLaunchOptions() {
-    if (SEARCH_MODE === "pc") {
-        return {
-            userAgent:
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport: null,
-            isMobile: false,
-            deviceScaleFactor: 1,
-        };
-    } else {
-        return {
-            userAgent:
-                "Mozilla/5.0 (Linux; Android 14; Pixel 6 Build/AP2A.240605.024) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36 Edge/121.0.2277.138",
-            viewport: { width: 360, height: 640 },
-            isMobile: true,
-            deviceScaleFactor: 3,
-        };
-    }
-}
-
 // -------------------- 主逻辑 --------------------
 (async () => {
-    const launchOptions = getLaunchOptions();
     // -------------------- 启动浏览器 + 持久化 --------------------
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
         headless: false,
@@ -228,7 +206,6 @@ function getLaunchOptions() {
             "--disable-features=IsolateOrigins,site-per-process",
             "--start-maximized"
         ],
-        ...launchOptions,
         userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         locale: "zh-CN",
         timezoneId: "Asia/Shanghai",

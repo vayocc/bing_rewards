@@ -1,4 +1,4 @@
-const {chromium} = require('playwright');
+const {chromium,devices} = require('playwright');
 
 // -------------------- 配置区域 --------------------
 // 切换这里： "pc" | "mobile"
@@ -205,12 +205,16 @@ function getLaunchOptions() {
         };
     } else {
         return {
+            // https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json
+            ...devices["Galaxy S24"],
+        };
+        /*return {
             userAgent:
                 "Mozilla/5.0 (Linux; Android 14; Pixel 6 Build/AP2A.240605.024) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36 Edge/121.0.2277.138",
             viewport: { width: 360, height: 640 },
             isMobile: true,
             deviceScaleFactor: 3,
-        };
+        };*/
     }
 }
 

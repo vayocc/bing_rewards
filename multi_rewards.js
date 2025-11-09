@@ -1,5 +1,5 @@
 const {chromium,devices} = require('playwright');
-
+const { findChromePath, getUserDataDir } = require("./playwrightEnv");
 // -------------------- 配置区域 --------------------
 // 切换这里： "pc" | "mobile"
 const SEARCH_MODE = "mobile";
@@ -8,9 +8,6 @@ const CN_BING_URL = "https://cn.bing.com";
 const MIN_SEARCH_TIMES = 48; // 最少搜索次数
 const MAX_SEARCH_TIMES = 60; // 最多搜索次数
 const WAIT_TIME = [3, 8];    // 每次搜索后等待的时间范围（秒）
-
-// 存储用户数据（免重复登录）
-const USER_DATA_DIR = "/Users/vayo/chrome-profile";
 
 DEFAULT_KEYWORDS = [
     //  技术 & 编程
@@ -220,12 +217,16 @@ function getLaunchOptions() {
 
 // -------------------- 主逻辑 --------------------
 (async () => {
+    const USER_DATA_DIR = getUserDataDir();
+    const CHROME_PATH = findChromePath();
+    console.log(`✅ 使用用户数据路径: ${USER_DATA_DIR}`);
+    console.log(`✅ Chrome 路径: ${CHROME_PATH}`);
     // -------------------- 启动浏览器 + 持久化 --------------------
     const launchOptions = getLaunchOptions();
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
         headless: false,
         slowMo: 50,      // 放慢操作，更像人类
-        executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        executablePath: CHROME_PATH,
         args: [
             "--disable-blink-features=AutomationControlled", // 防自动化检测
             "--no-sandbox",

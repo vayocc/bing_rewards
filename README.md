@@ -17,3 +17,17 @@ npm install --registry=https://registry.npmmirror.com
 ```shell
 npx playwright install
 ```
+
+启动方式
+pc端
+```shell
+multi_rewards.js 
+```
+or
+```shell
+multi_rewards.js --pc
+```
+手机端
+```shell
+multi_rewards.js --mobile
+```

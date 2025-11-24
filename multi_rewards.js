@@ -1,8 +1,9 @@
-const {chromium,devices} = require('playwright');
+const {chromium} = require('playwright');
 const { findChromePath, getUserDataDir } = require("./playwrightEnv");
+const { getLaunchOptions } = require("./launchConfig");
+const { fetchOnlineHotWords } = require("./hotKeywords");
 // -------------------- 配置区域 --------------------
-// 切换这里： "pc" | "mobile"
-const SEARCH_MODE = "mobile";
+
 
 const CN_BING_URL = "https://cn.bing.com";
 const MIN_SEARCH_TIMES = 48; // 最少搜索次数
@@ -190,39 +191,18 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
     return false;
 }
 
-// -------------------- 启动配置（PC / Mobile 切换） --------------------
-function getLaunchOptions() {
-    if (SEARCH_MODE === "pc") {
-        return {
-            userAgent:
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport: null,
-            isMobile: false,
-            deviceScaleFactor: 1,
-        };
-    } else {
-        return {
-            // https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json
-            ...devices["Galaxy S24"],
-        };
-        /*return {
-            userAgent:
-                "Mozilla/5.0 (Linux; Android 14; Pixel 6 Build/AP2A.240605.024) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36 Edge/121.0.2277.138",
-            viewport: { width: 360, height: 640 },
-            isMobile: true,
-            deviceScaleFactor: 3,
-        };*/
-    }
-}
 
 // -------------------- 主逻辑 --------------------
 (async () => {
+    const launchOptions = getLaunchOptions();
+    // 根据 PC/Mobile 自动取热词
+    let onlineWords = await fetchOnlineHotWords(launchOptions.isMobile);
+    const keywords = onlineWords?.length ? onlineWords : DEFAULT_KEYWORDS;
     const USER_DATA_DIR = getUserDataDir();
     const CHROME_PATH = findChromePath();
     console.log(`✅ 使用用户数据路径: ${USER_DATA_DIR}`);
     console.log(`✅ Chrome 路径: ${CHROME_PATH}`);
     // -------------------- 启动浏览器 + 持久化 --------------------
-    const launchOptions = getLaunchOptions();
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
         headless: false,
         slowMo: 50,      // 放慢操作，更像人类
@@ -264,7 +244,8 @@ function getLaunchOptions() {
     // 如果成功数<最少搜索次数 并且 尝试数<最大尝试数量
     while (successCount < MIN_SEARCH_TIMES && attempt < maxAttempts) {
         attempt++;
-        const keyword = DEFAULT_KEYWORDS[Math.floor(Math.random() * DEFAULT_KEYWORDS.length)];
+
+        const keyword = keywords[Math.floor(Math.random() * keywords.length)];
         console.log(`[${successCount + 1}/${MIN_SEARCH_TIMES}] Searching: ${keyword}`);
 
         try {

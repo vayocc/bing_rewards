@@ -23,7 +23,7 @@ function getLaunchOptions() {
 
     return {
         // https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json
-        ...devices["Galaxy S24"],
+        ...devices["Pixel 4a (5G)"],
         isMobile: true,
     };
     /*return {

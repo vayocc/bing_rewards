@@ -1,4 +1,7 @@
-// 这个文件项目里面没有用到， 备份的脚本文件而已
+/**
+ * 这个文件项目里面没有用到， 备份的脚本文件而已
+ */
+
 const { execSync } = require("child_process");
 const os = require("os");
 const fs = require("fs");

@@ -276,9 +276,7 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
             await searchBox.press("Enter");
 
             // 等待搜索结果页加载完成
-            // 等待页面网络空闲，这比 domcontentloaded 更可靠
-            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 });
-            await page.waitForTimeout(randomWait([1, 3])); // 随机等待1-3秒，确保页面稳定
+            await page.waitForTimeout(randomWait([2, 5])); // 随机等待2-5秒，确保页面稳定
             await simulateHumanScroll(page);
             successCount++;
         } catch (e) {

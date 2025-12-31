@@ -1,3 +1,7 @@
+/**
+ * 此文件被multi_rewards.js文件功能覆盖。 目前作为冗余文件
+ */
+
 const {chromium} = require('playwright');
 
 const { findChromePath, getUserDataDir } = require("./playwrightEnv");

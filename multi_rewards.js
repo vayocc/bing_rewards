@@ -8,7 +8,7 @@ const { fetchOnlineHotWords } = require("./hotKeywords");
 const CN_BING_URL = "https://cn.bing.com";
 const MIN_SEARCH_TIMES = 48; // 最少搜索次数
 const MAX_SEARCH_TIMES = 60; // 最多搜索次数
-const WAIT_TIME = [3, 8];    // 每次搜索后等待的时间范围（秒）
+const WAIT_TIME = [10, 18];    // 每次搜索后等待的时间范围（秒）
 
 DEFAULT_KEYWORDS = [
     //  技术 & 编程
@@ -118,7 +118,7 @@ async function simulateHumanScroll(page) {
         const pageHeight = await page.evaluate(() => document.body.scrollHeight);
 
         // 随机滚动次数（1-4次）
-        const scrollTimes = Math.floor(Math.random() * 4) + 1;
+        const scrollTimes = Math.floor(Math.random() * 14) + 1;
         let currentPosition = 0;
 
         for (let i = 0; i < scrollTimes; i++) {
@@ -195,9 +195,27 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
 // -------------------- 主逻辑 --------------------
 (async () => {
     const launchOptions = getLaunchOptions();
+    // 1. 动态生成 Args，手机模式去掉最大化，PC模式保留
+    const defaultArgs = [
+        "--disable-blink-features=AutomationControlled",
+        "--no-sandbox",
+        "--disable-infobars",
+        "--disable-dev-shm-usage",
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins,site-per-process",
+    ];
+
+// 如果是 PC，则最大化；如果是 Mobile，则不最大化（让它保持手机视窗大小）
+    const finalArgs = launchOptions.isMobile
+        ? defaultArgs
+        : [...defaultArgs, "--start-maximized"];
+
+
+
     // 根据 PC/Mobile 自动取热词
     let onlineWords = await fetchOnlineHotWords(launchOptions.isMobile);
-    const keywords = onlineWords?.length ? onlineWords : DEFAULT_KEYWORDS;
+    // const keywords = onlineWords?.length ? onlineWords : DEFAULT_KEYWORDS;
+    const keywords = [...(onlineWords || []), ...DEFAULT_KEYWORDS];
     const USER_DATA_DIR = getUserDataDir();
     const CHROME_PATH = findChromePath();
     console.log(`✅ 使用用户数据路径: ${USER_DATA_DIR}`);
@@ -205,17 +223,9 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
     // -------------------- 启动浏览器 + 持久化 --------------------
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
         headless: false,
-        slowMo: 50,      // 放慢操作，更像人类
+        slowMo: 100,      // 放慢操作，更像人类
         executablePath: CHROME_PATH,
-        args: [
-            "--disable-blink-features=AutomationControlled", // 防自动化检测
-            "--no-sandbox",
-            "--disable-infobars",
-            "--disable-dev-shm-usage",
-            "--disable-web-security",
-            "--disable-features=IsolateOrigins,site-per-process",
-            "--start-maximized"
-        ],
+        args: finalArgs,
         ...launchOptions,
         locale: "zh-CN",
         timezoneId: "Asia/Shanghai",
@@ -227,7 +237,16 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
     const page = pages.length > 0 ? pages[0] : await context.newPage();
 
     await page.setExtraHTTPHeaders({"Accept-Language": "zh-CN,zh;q=0.9"});
-    await page.goto(CN_BING_URL);
+    await page.goto(CN_BING_URL, { waitUntil: 'networkidle' });
+    const actualUA = await page.evaluate(() => navigator.userAgent);
+    const windowSize = await page.evaluate(() => ({ w: window.innerWidth, h: window.innerHeight }));
+
+    console.log(`🕵️ 实际 UserAgent: ${actualUA}`);
+    console.log(`🕵️ 实际 窗口大小: ${windowSize.w} x ${windowSize.h}`);
+
+    if (launchOptions.isMobile && !actualUA.includes('Mobile')) {
+        console.error("⚠️ 警告：当前虽然是手机模式，但 UserAgent 不包含 Mobile 字段！积分可能无法累积。");
+    }
 
     const page2 = await context.newPage();
     await page2.goto("https://www.browserscan.net/zh/bot-detection");
@@ -257,13 +276,15 @@ async function waitForLogin(page, maxWaitMinutes = 5) {
             await searchBox.press("Enter");
 
             // 等待搜索结果页加载完成
-            await page.waitForLoadState("domcontentloaded");
+            // 等待页面网络空闲，这比 domcontentloaded 更可靠
+            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 });
+            await page.waitForTimeout(randomWait([1, 3])); // 随机等待1-3秒，确保页面稳定
             await simulateHumanScroll(page);
             successCount++;
         } catch (e) {
             console.log(`❌ 搜索失败（第 ${attempt} 次尝试）：${e}`);
             await page.goto(CN_BING_URL);
-            await page.waitForTimeout(1000)
+            await page.waitForTimeout(3000)
             continue;
         }
 
